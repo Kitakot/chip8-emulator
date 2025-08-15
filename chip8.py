@@ -187,11 +187,15 @@ class Chip8:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="CHIP-8 Emulator")
-    parser.add_argument("rom", help="Путь к ROM-файлу (например: pong.ch8)")
+    parser.add_argument("rom", help="Path to ROM (e.g.: pong.ch8)")
+    parser.add_argument("-c", "--clock_speed", type=int, default=1000, help="Clock speed of the emulator")
+    parser.add_argument("-s", "--scale", type=int, default=10, help="Window size scale")
     args = parser.parse_args()
 
     pygame.init()
-    screen = pygame.display.set_mode((640, 320))
+    win_width = 64 * args.scale
+    win_height = 32 * args.scale
+    screen = pygame.display.set_mode((win_width, win_height))
     pygame.display.set_caption("CHIP-8 Emulator")
     clock = pygame.time.Clock()
 
@@ -219,5 +223,5 @@ if __name__ == "__main__":
 
         chip8.emulate_cycle()
         chip8.draw_screen(screen)
-        clock.tick(3000)
+        clock.tick(args.clock_speed)
         
