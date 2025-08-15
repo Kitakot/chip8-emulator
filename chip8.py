@@ -182,7 +182,7 @@ class Chip8:
         for y in range(32):
             for x in range(64):
                 if self.gfx[x + y * 64]:
-                    pygame.draw.rect(surface, (255, 255, 255), (x*10, y*10, 10, 10))
+                    pygame.draw.rect(surface, (255, 255, 255), (x*args.scale, y*args.scale, args.scale, args.scale))
         pygame.display.flip()
 
 if __name__ == "__main__":
@@ -217,6 +217,10 @@ if __name__ == "__main__":
             elif event.type == pygame.KEYDOWN:
                 if event.key in keymap:
                     chip8.keys[keymap[event.key]] = 1
+                if event.key == pygame.K_BACKSPACE:
+                    chip8 = Chip8()
+                    chip8.load_rom(args.rom)
+                    chip8.delay_frame = pygame.time.get_ticks()
             elif event.type == pygame.KEYUP:
                 if event.key in keymap:
                     chip8.keys[keymap[event.key]] = 0
@@ -224,4 +228,3 @@ if __name__ == "__main__":
         chip8.emulate_cycle()
         chip8.draw_screen(screen)
         clock.tick(args.clock_speed)
-        
