@@ -2,7 +2,7 @@ import argparse
 import random
 import pygame
 import sys
-
+import numpy as np
 
 class Chip8:
     def __init__(self):
@@ -178,18 +178,24 @@ class Chip8:
             print(f"unknown instruction {hex(opcode)}")
 
     def draw_screen(self, surface):
-        surface.fill((0, 0, 0))
+        small_surface = pygame.Surface((64, 32))
         for y in range(32):
             for x in range(64):
-                if self.gfx[x + y * 64]:
-                    pygame.draw.rect(surface, (255, 255, 255), (x*args.scale, y*args.scale, args.scale, args.scale))
+                if self.gfx[x + y*64]:
+                    small_surface.set_at((x, y), (255, 255, 255))
+                else:
+                    small_surface.set_at((x, y), (0, 0, 0))
+        scaled = pygame.transform.scale(small_surface, (64*args.scale, 32*args.scale))
+        surface.blit(scaled, (0, 0))
         pygame.display.flip()
+        
 
-def update_title(text=''):
+def update_title(clock, text=''):
+    fps = str(clock.get_fps())
+    caption = f"{title} | {fps} CPS"
     if text:
-        pygame.display.set_caption(title + ' ' + text)
-    else:
-        pygame.display.set_caption(title)
+        caption += " " + text
+    pygame.display.set_caption(caption)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="CHIP-8 Emulator")
@@ -203,8 +209,8 @@ if __name__ == "__main__":
     win_height = 32 * args.scale
     screen = pygame.display.set_mode((win_width, win_height))
     title = "CHIP-8 Emulator"
-    update_title()
     clock = pygame.time.Clock()
+    update_title(clock)
     paused = False
 
     chip8 = Chip8()
@@ -233,11 +239,9 @@ if __name__ == "__main__":
                     paused = not paused
                     if paused:
                         pause_time = pygame.time.get_ticks()
-                        update_title("(PAUSED)")
                     else:
                         pause_diff = pygame.time.get_ticks() - pause_time
                         chip8.delay_frame += pause_diff
-                        update_title()
             elif event.type == pygame.KEYUP:
                 if event.key in keymap:
                     chip8.keys[keymap[event.key]] = 0
@@ -246,3 +250,4 @@ if __name__ == "__main__":
             chip8.emulate_cycle()
         chip8.draw_screen(screen)
         clock.tick(args.clock_speed)
+        update_title(clock, "(PAUSED)" if paused else "")
