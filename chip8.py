@@ -185,6 +185,9 @@ class Chip8:
                     pygame.draw.rect(surface, (255, 255, 255), (x*args.scale, y*args.scale, args.scale, args.scale))
         pygame.display.flip()
 
+def update_title(text=''):
+    pygame.display.set_caption(title + ' ' + text)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="CHIP-8 Emulator")
     parser.add_argument("rom", help="Path to ROM (e.g.: pong.ch8)")
@@ -196,8 +199,10 @@ if __name__ == "__main__":
     win_width = 64 * args.scale
     win_height = 32 * args.scale
     screen = pygame.display.set_mode((win_width, win_height))
-    pygame.display.set_caption("CHIP-8 Emulator")
+    title = "CHIP-8 Emulator"
+    update_title()
     clock = pygame.time.Clock()
+    paused = False
 
     chip8 = Chip8()
     chip8.load_rom(args.rom)
@@ -217,14 +222,24 @@ if __name__ == "__main__":
             elif event.type == pygame.KEYDOWN:
                 if event.key in keymap:
                     chip8.keys[keymap[event.key]] = 1
-                if event.key == pygame.K_BACKSPACE:
+                if event.key == pygame.K_BACKSPACE: #restart
                     chip8 = Chip8()
                     chip8.load_rom(args.rom)
                     chip8.delay_frame = pygame.time.get_ticks()
+                if event.key == pygame.K_p: #pause
+                    paused = not paused
+                    if paused:
+                        pause_time = pygame.time.get_ticks()
+                        update_title("(PAUSED)")
+                    else:
+                        pause_diff = pygame.time.get_ticks() - pause_time
+                        chip8.delay_frame += pause_diff
+                        update_title()
             elif event.type == pygame.KEYUP:
                 if event.key in keymap:
                     chip8.keys[keymap[event.key]] = 0
 
-        chip8.emulate_cycle()
+        if not paused:
+            chip8.emulate_cycle()
         chip8.draw_screen(screen)
         clock.tick(args.clock_speed)
