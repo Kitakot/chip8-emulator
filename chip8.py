@@ -186,7 +186,10 @@ class Chip8:
         pygame.display.flip()
 
 def update_title(text=''):
-    pygame.display.set_caption(title + ' ' + text)
+    if text:
+        pygame.display.set_caption(title + ' ' + text)
+    else:
+        pygame.display.set_caption(title)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="CHIP-8 Emulator")
