@@ -201,6 +201,7 @@ if __name__ == "__main__":
     parser.add_argument("rom", help="Path to ROM (e.g.: pong.ch8)")
     parser.add_argument("-c", "--clock_speed", type=int, default=1000, help="Clock speed of the emulator")
     parser.add_argument("-s", "--scale", type=int, default=10, help="Window size scale")
+    parser.add_argument("-d", "--debug", action="store_true", help="Debug mode")
     args = parser.parse_args()
 
     pygame.init()
@@ -211,6 +212,7 @@ if __name__ == "__main__":
     clock = pygame.time.Clock()
     update_title(clock)
     paused = False
+    debug = args.debug
 
     chip8 = Chip8()
     chip8.load_rom(args.rom)
@@ -241,6 +243,12 @@ if __name__ == "__main__":
                     else:
                         pause_diff = pygame.time.get_ticks() - pause_time
                         chip8.delay_frame += pause_diff
+                if event.key == pygame.K_k: #cycle advance
+                    if paused and debug:
+                        chip8.emulate_cycle()
+                if event.key == pygame.K_l: #delay advance
+                    if paused and debug:
+                        chip8.update_timers()
             elif event.type == pygame.KEYUP:
                 if event.key in keymap:
                     chip8.keys[keymap[event.key]] = 0
