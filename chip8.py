@@ -42,6 +42,8 @@ class Chip8:
         for i, byte in enumerate(fontset):
             self.mem[i] = byte
 
+        self.scale = args.scale
+
     def load_rom(self, file):
         with open(file, "rb") as f:
             rom = f.read()
@@ -178,20 +180,17 @@ class Chip8:
             print(f"unknown instruction {hex(opcode)}")
 
     def draw_screen(self, surface):
-        small_surface = pygame.Surface((64, 32))
+        surface.fill((0, 0, 0))
         for y in range(32):
             for x in range(64):
                 if self.gfx[x + y*64]:
-                    small_surface.set_at((x, y), (255, 255, 255))
-                else:
-                    small_surface.set_at((x, y), (0, 0, 0))
-        scaled = pygame.transform.scale(small_surface, (64*args.scale, 32*args.scale))
-        surface.blit(scaled, (0, 0))
+                    rect = pygame.Rect(x*self.scale, y*self.scale, self.scale, self.scale)
+                    pygame.draw.rect(surface, (255, 255, 255), rect)
         pygame.display.flip()
         
 
 def update_title(clock, text=''):
-    fps = str(clock.get_fps())
+    fps = int(clock.get_fps())
     caption = f"{title} | {fps} CPS"
     if text:
         caption += " " + text
