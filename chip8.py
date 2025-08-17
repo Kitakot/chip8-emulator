@@ -2,7 +2,7 @@ import argparse
 import random
 import pygame
 import sys
-import numpy as np
+import datetime
 
 class Chip8:
     def __init__(self):
@@ -249,6 +249,9 @@ if __name__ == "__main__":
                 if event.key == pygame.K_l: #delay advance
                     if paused and debug:
                         chip8.update_timers()
+                if event.key == pygame.K_F2: #screenshot
+                    sname = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                    pygame.image.save(screen, f"{sname}.jpg")
             elif event.type == pygame.KEYUP:
                 if event.key in keymap:
                     chip8.keys[keymap[event.key]] = 0
