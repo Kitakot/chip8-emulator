@@ -55,9 +55,10 @@ class Chip8:
 
         self.execute_command(opcode)
 
-        if pygame.time.get_ticks() > self.delay_frame + (1000 / 60):
-            self.update_timers()
-            self.delay_frame += 1000 / 60
+        if not paused:
+            if pygame.time.get_ticks() > self.delay_frame + (1000 / 60):
+                self.update_timers()
+                self.delay_frame += 1000 / 60
 
     def update_timers(self):
         if self.delay_timer > 0:
