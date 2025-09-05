@@ -186,8 +186,23 @@ class Chip8:
                 if self.gfx[x + y*64]:
                     rect = pygame.Rect(x*self.scale, y*self.scale, self.scale, self.scale)
                     pygame.draw.rect(surface, (255, 255, 255), rect)
+
+        if debug:
+            draw_debug_overlay(screen, chip8, Font)
+
         pygame.display.flip()
-        
+
+def draw_debug_overlay(surface, chip8, font):
+    regs = ' '.join(f"V{i:X}:{v:02X}" for i, v in enumerate(chip8.V))
+    index_pc = f"I:{chip8.I:03X}  PC:{chip8.pc:03X}"
+    timers = f"DT:{chip8.delay_timer:02X}  ST:{chip8.sound_timer:02X}"
+    stack_info = ' '.join(f"{s:03X}" for s in chip8.stack)
+
+    lines = [regs, index_pc, timers, "STACK: " + stack_info]
+
+    for idx, line in enumerate(lines):
+        text_surface = font.render(line, True, (0, 255, 0))
+        surface.blit(text_surface, (5, 5 + idx * 15))    
 
 def update_title(clock, text=''):
     fps = int(clock.get_fps())
@@ -213,6 +228,7 @@ if __name__ == "__main__":
     update_title(clock)
     paused = False
     debug = args.debug
+    Font = pygame.font.SysFont('lucidaconsole',  12)
 
     chip8 = Chip8()
     chip8.load_rom(args.rom)
