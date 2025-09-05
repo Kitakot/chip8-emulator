@@ -1,8 +1,10 @@
 import argparse
+import os
 import random
 import pygame
 import sys
 import datetime
+import pickle
 
 class Chip8:
     def __init__(self):
@@ -212,6 +214,38 @@ def update_title(clock, text=''):
         caption += " " + text
     pygame.display.set_caption(caption)
 
+def save_state(c: Chip8):
+    state = {
+        "mem": c.mem,
+        "V": c.V,
+        "I": c.I,
+        "pc": c.pc,
+        "gfx": c.gfx,
+        "delay_timer": c.delay_timer,
+        "sound_timer": c.sound_timer,
+        "keys": c.keys,
+        "stack": c.stack
+    }
+    filename = filename = os.path.splitext(args.rom)[0] + ".sav"
+    with open(filename, "wb") as f:
+        pickle.dump(state, f)
+    print(f"State saved at {filename}")
+
+def load_state(c: Chip8):
+    filename = filename = os.path.splitext(args.rom)[0] + ".sav"
+    with open(filename, "rb") as f:
+        state = pickle.load(f)
+    chip8.mem = state["mem"]
+    chip8.V = state["V"]
+    chip8.I = state["I"]
+    chip8.pc = state["pc"]
+    chip8.stack = state["stack"]
+    chip8.delay_timer = state["delay_timer"]
+    chip8.sound_timer = state["sound_timer"]
+    chip8.keys = state["keys"]
+    chip8.gfx = state["gfx"]
+    print(f"State loaded from {filename}")
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="CHIP-8 Emulator")
     parser.add_argument("rom", help="Path to ROM (e.g.: pong.ch8)")
@@ -269,6 +303,10 @@ if __name__ == "__main__":
                 if event.key == pygame.K_F2: #screenshot
                     sname = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
                     pygame.image.save(screen, f"{sname}.jpg")
+                if event.key == pygame.K_F5:   # Save state
+                    save_state(chip8)
+                if event.key == pygame.K_F9: # Load state
+                    load_state(chip8)
             elif event.type == pygame.KEYUP:
                 if event.key in keymap:
                     chip8.keys[keymap[event.key]] = 0
