@@ -312,7 +312,6 @@ if __name__ == "__main__":
                 if event.key == pygame.K_RIGHTBRACKET:  # increase speed
                     step = 10 if (event.mod & pygame.KMOD_CTRL) else 100
                     target_speed += step
-
                 if event.key == pygame.K_LEFTBRACKET:  # decrease speed
                     step = 10 if (event.mod & pygame.KMOD_CTRL) else 100
                     if target_speed - step > 0:
