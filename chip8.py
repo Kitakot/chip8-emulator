@@ -209,7 +209,8 @@ def draw_debug_overlay(surface, chip8, font):
 
 def update_title(clock, text=''):
     fps = int(clock.get_fps())
-    caption = f"{title} | {fps} CPS"
+    ts = target_speed
+    caption = f"{title} | {fps}/{ts} CPS"
     if text:
         caption += " " + text
     pygame.display.set_caption(caption)
@@ -260,6 +261,7 @@ if __name__ == "__main__":
     screen = pygame.display.set_mode((win_width, win_height))
     title = "CHIP-8 Emulator"
     clock = pygame.time.Clock()
+    target_speed = args.clock_speed
     update_title(clock)
     paused = False
     debug = args.debug
@@ -307,6 +309,14 @@ if __name__ == "__main__":
                     save_state(chip8)
                 if event.key == pygame.K_F9: # Load state
                     load_state(chip8)
+                if event.key == pygame.K_RIGHTBRACKET:  # increase speed
+                    step = 10 if (event.mod & pygame.KMOD_CTRL) else 100
+                    target_speed += step
+
+                if event.key == pygame.K_LEFTBRACKET:  # decrease speed
+                    step = 10 if (event.mod & pygame.KMOD_CTRL) else 100
+                    if target_speed - step > 0:
+                        target_speed = max(step, target_speed - step)
             elif event.type == pygame.KEYUP:
                 if event.key in keymap:
                     chip8.keys[keymap[event.key]] = 0
@@ -314,5 +324,5 @@ if __name__ == "__main__":
         if not paused:
             chip8.emulate_cycle()
         chip8.draw_screen(screen)
-        clock.tick(args.clock_speed)
+        clock.tick(target_speed)
         update_title(clock, "(PAUSED)" if paused else "")
