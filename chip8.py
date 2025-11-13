@@ -8,6 +8,30 @@ import pygame
 
 
 
+import faulthandler
+import tracemalloc
+from contextlib import contextmanager
+
+try:
+    from pyinstrument import Profiler
+except ImportError:
+    Profiler = None  # если PyInstrument не установлен
+
+
+@contextmanager
+def optional_profiler(enabled):
+    """Контекстный менеджер для профилирования (PyInstrument)"""
+    if enabled and Profiler:
+        profiler = Profiler()
+        profiler.start()
+        try:
+            yield
+        finally:
+            profiler.stop()
+            print(profiler.output_text(unicode=True, color=True))
+    else:
+        yield
+
 class Chip8:
     def __init__(self):
         self.mem = [0] * 4096
@@ -256,83 +280,101 @@ def load_state(c: Chip8):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="CHIP-8 Emulator")
-    parser.add_argument("rom",
-                        help="Path to ROM (e.g.: pong.ch8)")
-    parser.add_argument("-c", "--clock_speed", type=int, default=1000,
-                        help="Clock speed of the emulator")
-    parser.add_argument("-s", "--scale", type=int, default=10,
-                        help="Window size scale")
-    parser.add_argument("-d", "--debug", action="store_true",
-                        help="Debug mode")
+    parser.add_argument("rom", help="Path to ROM (e.g.: pong.ch8)")
+    parser.add_argument("-c", "--clock_speed", type=int, default=1000, help="Clock speed of the emulator")
+    parser.add_argument("-s", "--scale", type=int, default=10, help="Window size scale")
+    parser.add_argument("-d", "--debug", action="store_true", help="Debug mode")
+
+    # --- Новое ---
+    parser.add_argument("--profile", action="store_true",
+                        help="Enable performance profiling with PyInstrument")
+    parser.add_argument("--memcheck", action="store_true",
+                        help="Enable memory and crash diagnostics")
+
     args = parser.parse_args()
 
-    pygame.init()
-    win_width = 64 * args.scale
-    win_height = 32 * args.scale
-    screen = pygame.display.set_mode((win_width, win_height))
-    title = "CHIP-8 Emulator"
-    clock = pygame.time.Clock()
-    target_speed = args.clock_speed
-    update_title(clock)
-    paused = False
-    debug = args.debug
-    Font = pygame.font.SysFont('lucidaconsole',  12)
+    # --- Если memcheck активен ---
+    if args.memcheck:
+        faulthandler.enable()
+        tracemalloc.start()
+        print("[MEMCHECK] faulthandler + tracemalloc активированы")
 
-    chip8 = Chip8()
-    chip8.load_rom(args.rom)
+    # --- Основной цикл в контексте профайлера ---
+    with optional_profiler(args.profile):
+        pygame.init()
+        win_width = 64 * args.scale
+        win_height = 32 * args.scale
+        screen = pygame.display.set_mode((win_width, win_height))
+        title = "CHIP-8 Emulator"
+        clock = pygame.time.Clock()
+        target_speed = args.clock_speed
+        update_title(clock)
+        paused = False
+        debug = args.debug
+        Font = pygame.font.SysFont('lucidaconsole', 12)
 
-    keymap = {
-        pygame.K_1: 0x1, pygame.K_2: 0x2, pygame.K_3: 0x3, pygame.K_4: 0xC,
-        pygame.K_q: 0x4, pygame.K_w: 0x5, pygame.K_e: 0x6, pygame.K_r: 0xD,
-        pygame.K_a: 0x7, pygame.K_s: 0x8, pygame.K_d: 0x9, pygame.K_f: 0xE,
-        pygame.K_z: 0xA, pygame.K_x: 0x0, pygame.K_c: 0xB, pygame.K_v: 0xF
-    }
+        chip8 = Chip8()
+        chip8.load_rom(args.rom)
 
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            elif event.type == pygame.KEYDOWN:
-                if event.key in keymap:
-                    chip8.keys[keymap[event.key]] = 1
-                if event.key == pygame.K_BACKSPACE:  # restart
-                    chip8 = Chip8()
-                    chip8.load_rom(args.rom)
-                    chip8.delay_frame = pygame.time.get_ticks()
-                if event.key == pygame.K_p:  # pause
-                    paused = not paused
-                    if paused:
-                        pause_time = pygame.time.get_ticks()
-                    else:
-                        pause_diff = pygame.time.get_ticks() - pause_time
-                        chip8.delay_frame += pause_diff
-                if event.key == pygame.K_k:  # cycle advance
-                    if paused and debug:
-                        chip8.emulate_cycle()
-                if event.key == pygame.K_l:  # delay advance
-                    if paused and debug:
-                        chip8.update_timers()
-                if event.key == pygame.K_F2:  # screenshot
-                    sname = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-                    pygame.image.save(screen, f"{sname}.jpg")
-                if event.key == pygame.K_F5:  # Save state
-                    save_state(chip8)
-                if event.key == pygame.K_F9:  # Load state
-                    load_state(chip8)
-                if event.key == pygame.K_RIGHTBRACKET:  # increase speed
-                    step = 10 if (event.mod & pygame.KMOD_CTRL) else 100
-                    target_speed += step
-                if event.key == pygame.K_LEFTBRACKET:  # decrease speed
-                    step = 10 if (event.mod & pygame.KMOD_CTRL) else 100
-                    if target_speed - step > 0:
-                        target_speed = max(step, target_speed - step)
-            elif event.type == pygame.KEYUP:
-                if event.key in keymap:
-                    chip8.keys[keymap[event.key]] = 0
+        keymap = {
+            pygame.K_1: 0x1, pygame.K_2: 0x2, pygame.K_3: 0x3, pygame.K_4: 0xC,
+            pygame.K_q: 0x4, pygame.K_w: 0x5, pygame.K_e: 0x6, pygame.K_r: 0xD,
+            pygame.K_a: 0x7, pygame.K_s: 0x8, pygame.K_d: 0x9, pygame.K_f: 0xE,
+            pygame.K_z: 0xA, pygame.K_x: 0x0, pygame.K_c: 0xB, pygame.K_v: 0xF
+        }
 
-        if not paused:
-            chip8.emulate_cycle()
-        chip8.draw_screen(screen)
-        clock.tick(target_speed)
-        update_title(clock, "(PAUSED)" if paused else "")
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    if args.memcheck:
+                        # --- Выводим статистику памяти перед выходом ---
+                        snapshot = tracemalloc.take_snapshot()
+                        top_stats = snapshot.statistics('lineno')
+                        print("[MEMCHECK] Top 5 memory allocations:")
+                        for stat in top_stats[:5]:
+                            print(stat)
+                    sys.exit()
+                elif event.type == pygame.KEYDOWN:
+                    if event.key in keymap:
+                        chip8.keys[keymap[event.key]] = 1
+                    if event.key == pygame.K_BACKSPACE:  # restart
+                        chip8 = Chip8()
+                        chip8.load_rom(args.rom)
+                        chip8.delay_frame = pygame.time.get_ticks()
+                    if event.key == pygame.K_p:
+                        paused = not paused
+                        if paused:
+                            pause_time = pygame.time.get_ticks()
+                        else:
+                            pause_diff = pygame.time.get_ticks() - pause_time
+                            chip8.delay_frame += pause_diff
+                    if event.key == pygame.K_k:
+                        if paused and debug:
+                            chip8.emulate_cycle()
+                    if event.key == pygame.K_l:
+                        if paused and debug:
+                            chip8.update_timers()
+                    if event.key == pygame.K_F2:
+                        sname = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                        pygame.image.save(screen, f"{sname}.jpg")
+                    if event.key == pygame.K_F5:
+                        save_state(chip8)
+                    if event.key == pygame.K_F9:
+                        load_state(chip8)
+                    if event.key == pygame.K_RIGHTBRACKET:
+                        step = 10 if (event.mod & pygame.KMOD_CTRL) else 100
+                        target_speed += step
+                    if event.key == pygame.K_LEFTBRACKET:
+                        step = 10 if (event.mod & pygame.KMOD_CTRL) else 100
+                        if target_speed - step > 0:
+                            target_speed = max(step, target_speed - step)
+                elif event.type == pygame.KEYUP:
+                    if event.key in keymap:
+                        chip8.keys[keymap[event.key]] = 0
+
+            if not paused:
+                chip8.emulate_cycle()
+            chip8.draw_screen(screen)
+            clock.tick(target_speed)
+            update_title(clock, "(PAUSED)" if paused else "")
