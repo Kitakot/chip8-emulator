@@ -117,9 +117,9 @@ class Chip8:
             elif n == 0x3:
                 self.V[x] ^= self.V[y]  # 8XY3 - VX ^= VY
             elif n == 0x4:
-                sum = self.V[x] + self.V[y]  # 8XY4 - VX += VY with carry
-                self.V[x] = sum & 0xFF
-                self.V[15] = 1 if sum > 0xFF else 0
+                sm = self.V[x] + self.V[y]  # 8XY4 - VX += VY with carry
+                self.V[x] = sm & 0xFF
+                self.V[15] = 1 if sm > 0xFF else 0
             elif n == 0x5:
                 self.V[x] = (self.V[x] - self.V[y]) & 0xFF  # 8XY5 - VX -= VY with carry
                 self.V[15] = 1 if self.V[x] >= self.V[y] else 0
@@ -198,7 +198,7 @@ class Chip8:
         pygame.display.flip()
 
 
-def draw_debug_overlay(surface: pygame.Surface, chip8: Chip8, font: pygame.font.Font):
+def draw_debug_overlay(surface, chip8, font):
     regs = ' '.join(f"V{i:X}:{v:02X}" for i, v in enumerate(chip8.V))
     index_pc = f"I:{chip8.I:03X}  PC:{chip8.pc:03X}"
     timers = f"DT:{chip8.delay_timer:02X}  ST:{chip8.sound_timer:02X}"
