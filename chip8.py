@@ -1,10 +1,11 @@
 import argparse
 import os
 import random
-import pygame
 import sys
 import datetime
 import pickle
+import pygame
+
 
 
 class Chip8:
@@ -197,7 +198,7 @@ class Chip8:
         pygame.display.flip()
 
 
-def draw_debug_overlay(surface, chip8, font):
+def draw_debug_overlay(surface: pygame.Surface, chip8: Chip8, font: pygame.font.Font):
     regs = ' '.join(f"V{i:X}:{v:02X}" for i, v in enumerate(chip8.V))
     index_pc = f"I:{chip8.I:03X}  PC:{chip8.pc:03X}"
     timers = f"DT:{chip8.delay_timer:02X}  ST:{chip8.sound_timer:02X}"
@@ -241,15 +242,15 @@ def load_state(c: Chip8):
     filename = filename = os.path.splitext(args.rom)[0] + ".sav"
     with open(filename, "rb") as f:
         state = pickle.load(f)
-    chip8.mem = state["mem"]
-    chip8.V = state["V"]
-    chip8.I = state["I"]
-    chip8.pc = state["pc"]
-    chip8.stack = state["stack"]
-    chip8.delay_timer = state["delay_timer"]
-    chip8.sound_timer = state["sound_timer"]
-    chip8.keys = state["keys"]
-    chip8.gfx = state["gfx"]
+    c.mem = state["mem"]
+    c.V = state["V"]
+    c.I = state["I"]
+    c.pc = state["pc"]
+    c.stack = state["stack"]
+    c.delay_timer = state["delay_timer"]
+    c.sound_timer = state["sound_timer"]
+    c.keys = state["keys"]
+    c.gfx = state["gfx"]
     print(f"State loaded from {filename}")
 
 
